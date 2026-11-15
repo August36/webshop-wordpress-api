@@ -1,0 +1,46 @@
+# services er de containere docker skal bygge
+# image er en færdigpakket skabelon, som docker bruger til at oprette containeren
+services:
+  db:
+    image: mariadb:11.4
+    container_name: webshop-db
+    restart: always
+    environment:
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+
+  wordpress:
+    image: wordpress:php8.3-apache
+    container_name: webshop-wordpress
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${DB_NAME}
+    volumes:
+      - wordpress_data:/var/www/html
+      - ./plugins:/var/www/html/wp-content/plugins
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: webshop-phpmyadmin
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+
+volumes:
+  db_data:
+  wordpress_data:
