@@ -13,6 +13,13 @@ add_action('rest_api_init', function () {
         'permission_callback' => '__return_true',
     ]);
 
+    // Get current logged-in user
+    register_rest_route('myshop/v1', '/users/me', [
+        'methods' => 'GET',
+        'callback' => 'get_current_user_data',
+        'permission_callback' => 'is_user_logged_in',
+    ]);
+
 });
 
 
@@ -95,4 +102,27 @@ function register_user($request) {
         'IsEmployee' => false,
     ], 201);
 
+}
+
+// ==========================================
+// 3. GET CURRENT USER
+// ==========================================
+
+function get_current_user_data() {
+
+    // Get ID of the logged-in user
+    $user_id = get_current_user_id();
+
+    // Get user information
+    $user = get_userdata($user_id);
+
+    return [
+        'UID' => $user_id,
+        'Username' => $user->user_login,
+        'Email' => $user->user_email,
+        'Firstname' => $user->first_name,
+        'Lastname' => $user->last_name,
+        'Phone' => get_user_meta($user_id, 'phone', true),
+        'IsEmployee' => (bool) get_user_meta($user_id, 'is_employee', true),
+    ];
 }
