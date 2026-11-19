@@ -44,7 +44,7 @@ GET /products
 ```
 GET /products/{id}
 → 200 { product: {...} }
-```
+``` 
 
 ### Create
 ```
