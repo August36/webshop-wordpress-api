@@ -22,3 +22,4 @@ require_once __DIR__ . '/admin/user-fields.php';
 require_once __DIR__ . '/api/products.php';
 require_once plugin_dir_path(__FILE__) . 'api/users.php';
 require_once plugin_dir_path(__FILE__) . 'api/orders.php';
+require_once plugin_dir_path(__FILE__) . 'api/attributes.php';
