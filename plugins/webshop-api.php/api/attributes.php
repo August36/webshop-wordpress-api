@@ -24,21 +24,21 @@ add_action('rest_api_init', function () {
     register_rest_route('api', '/attributes-values', [
         'methods' => 'POST',
         'callback' => 'create_attributes_value',
-        'permission_callback' => 'is_user_logged_in',
+        'permission_callback' => 'webshop_can_manage_catalog',
     ]);
 
     // Update attributes value
     register_rest_route('api', '/attributes-values/(?P<id>\d+)', [
         'methods' => 'PUT',
         'callback' => 'update_attributes_value',
-        'permission_callback' => 'is_user_logged_in',
+        'permission_callback' => 'webshop_can_manage_catalog',
     ]);
 
     // Delete attributes value
     register_rest_route('api', '/attributes-values/(?P<id>\d+)', [
         'methods' => 'DELETE',
         'callback' => 'delete_attributes_value',
-        'permission_callback' => 'is_user_logged_in',
+        'permission_callback' => 'webshop_can_manage_catalog',
     ]);
 
 });

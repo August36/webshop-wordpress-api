@@ -203,13 +203,14 @@ See **API_TESTING.md** for comprehensive testing examples.
 - Attributes: WordPress `post_type='product_attribute'` with post_meta
 - Order Items: Serialized array in order post_meta
 - Users: WordPress users with user_meta
-- Tokens: Stored in user_meta (consider JWT for production)
+- Token sessions: stored in WordPress user meta
 
 ### Authentication
-- Simple bearer tokens (32-byte random hex strings)
-- Stored in user_meta with key `api_token`
-- **TODO:** Implement JWT or OAuth2 for production
-- **TODO:** Add token expiration
+- `/api/login` accepts email and password and returns a JWT bearer token.
+- The JWT plugin and `JWT_AUTH_SECRET_KEY` must be configured.
+- The JWT expires according to the plugin's settings (seven days by default).
+- `/api/logout` revokes the submitted token.
+- The old `/jwt-auth/v1/token` login is disabled; old tokens must be replaced.
 
 ### API Standards
 - REST conventions
@@ -224,12 +225,12 @@ See **API_TESTING.md** for comprehensive testing examples.
 
 ### Current Implementation
 - Uses WordPress password hashing
-- Simple bearer token authentication
-- Checks `is_user_logged_in()` for protected endpoints
+- JWT bearer token authentication
+- Catalog writes require administrator privileges; orders require the authenticated owner
 
 ### Production Recommendations
-1. ✅ Implement JWT tokens with expiration
-2. ✅ Add role-based access control (admin vs customer)
+1. Review JWT expiration settings
+2. Review role-based access control
 3. ✅ Add request validation and sanitization (already done)
 4. ✅ Implement rate limiting
 5. ✅ Add CORS headers if needed

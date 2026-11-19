@@ -407,7 +407,9 @@ Response (201 for new item, 200 for update):
 - All endpoints use `/wp-json/api/` as the base path
 - All POST/PUT endpoints require `Content-Type: application/json`
 - Authenticated endpoints require a valid token from `/api/login`
+- The JWT authentication plugin and `JWT_AUTH_SECRET_KEY` must be configured. Previous JWTs and the old `/jwt-auth/v1/token` login are no longer supported.
 - User can only access their own orders (uid must match current user)
-- Admin-only endpoints currently check for `is_user_logged_in()` - implement proper role checking for production
+- Product and attribute write endpoints require the WordPress `manage_options` capability.
+- The bundled JWT plugin includes a session-validation hook required for token revocation; preserve it when updating the plugin.
 - Order items are managed via the `/api/orders/{order_id}/items` endpoint
 - Quantity in orders is called `amount` in the response

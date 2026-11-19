@@ -1,5 +1,9 @@
 # API Testing Guide
 
+For an automated login, order and logout check, start Docker and run
+`py -3 tests\auth-integration.py` from the project directory. It creates and
+removes a temporary user, product and order.
+
 ## Quick Test Commands
 
 ### 1. Test Register User

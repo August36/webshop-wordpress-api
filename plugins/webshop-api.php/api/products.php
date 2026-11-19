@@ -21,19 +21,19 @@ add_action('rest_api_init', function () {
     register_rest_route('api', '/products', [
         'methods' => 'POST',
         'callback' => 'create_product',
-        'permission_callback' => 'is_user_logged_in',
+        'permission_callback' => 'webshop_can_manage_catalog',
     ]);
 
     register_rest_route('api', '/products/(?P<id>\d+)', [
         'methods' => 'PUT',
         'callback' => 'update_product',
-        'permission_callback' => 'is_user_logged_in',
+        'permission_callback' => 'webshop_can_manage_catalog',
     ]);
 
     register_rest_route('api', '/products/(?P<id>\d+)', [
         'methods' => 'DELETE',
         'callback' => 'delete_product',
-        'permission_callback' => 'is_user_logged_in',
+        'permission_callback' => 'webshop_can_manage_catalog',
     ]);
 
 });

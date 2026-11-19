@@ -385,6 +385,11 @@ class Jwt_Auth_Public {
 				);
 			}
 
+			$validation = apply_filters( 'jwt_auth_validate_decoded_token', true, $token );
+			if ( is_wp_error( $validation ) ) {
+				return $validation;
+			}
+
 			/** Everything looks good return the decoded token if we are using the custom_token */
 			if ( $custom_token ) {
 				return $token;

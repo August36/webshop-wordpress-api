@@ -198,7 +198,7 @@ The WordPress Webshop API has been updated to match the structure, naming conven
 - Register endpoint: `/api/register`
 - Login endpoint: `/api/login`
 - Logout endpoint: `/api/logout`
-- Token-based authentication (simple bearer token stored in user meta)
+- JWT bearer tokens backed by revocable WordPress sessions
 - Maintains backward compatibility with WordPress auth
 
 ---
@@ -324,7 +324,8 @@ To migrate existing clients to the new API:
 - WordPress authentication and user management still function normally
 - Post meta continues to store product and order data
 - Existing admin interfaces remain unchanged
-- API tokens are stored in user meta as a simple solution; consider JWT for production
+- The JWT authentication plugin and `JWT_AUTH_SECRET_KEY` are required for API login.
+- The old `/jwt-auth/v1/token` login is disabled; existing JWTs must be replaced via `/api/login`.
 
 ---
 
@@ -332,8 +333,8 @@ To migrate existing clients to the new API:
 
 Recommended enhancements for full Laravel API parity:
 
-1. Implement JWT tokens instead of simple bearer tokens
-2. Add Sanctum-style token expiration
+1. Review token expiration settings
+2. Add API rate limiting
 3. Add more detailed error codes
 4. Add pagination support
 5. Add filtering and sorting capabilities

@@ -265,7 +265,7 @@ GET /orders/{uid}
 - All ratings: 2 decimal places
 - Quantities: integers only
 - Status values: lowercase ("pending", "completed", etc.)
-- Tokens: Bearer tokens, 64-char hex strings
+- Tokens: JWT bearer tokens from `/login`; `/logout` revokes the submitted token
 - Phone: Danish format (+45...)
 
 ---
