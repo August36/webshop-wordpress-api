@@ -92,11 +92,13 @@ function get_user_orders($request) {
 
 function create_order($request) {
 
+    global $wpdb;
+
     $uid = absint($request['uid']);
     $current_user_id = get_current_user_id();
 
-    // Check if user is trying to create order for themselves
-    if ((int) $uid !== $current_user_id) {
+    // Check if user is creating an order for themselves
+    if ($uid !== $current_user_id) {
         return new WP_REST_Response([
             'message' => 'Unauthorized access'
         ], 403);
@@ -104,62 +106,121 @@ function create_order($request) {
 
     $data = $request->get_json_params();
 
-    // Validate required fields
-    if (empty($data['product_id']) || empty($data['quantity'])) {
+    // Validate items
+    if (empty($data['items']) || !is_array($data['items'])) {
         return new WP_REST_Response([
-            'message' => 'Product ID and quantity are required.'
+            'message' => 'Order items are required.'
         ], 400);
     }
 
-    $product_id = absint($data['product_id']);
-    $quantity = absint($data['quantity']);
+    $order_items = [];
+    $total_amount = 0;
 
-    // Validate product
-    $product = get_post($product_id);
-    if (!$product || $product->post_type !== 'product' || $product->post_status !== 'publish') {
-        return new WP_REST_Response([
-            'message' => 'Invalid product.'
-        ], 400);
-    }
+    // Validate products and calculate total
+    foreach ($data['items'] as $item) {
 
-    // Get product price
-    $price = (float) get_post_meta($product_id, 'price', true);
-    $total_amount = $price * $quantity;
+        $product_id = isset($item['product_id'])
+            ? absint($item['product_id'])
+            : 0;
 
-    // Create order post
-    $order_id = wp_insert_post([
-        'post_type' => 'shop_order',
-        'post_title' => 'Order - User ' . $uid,
-        'post_status' => 'publish',
-    ], true);
+        $quantity = isset($item['amount'])
+            ? filter_var($item['amount'], FILTER_VALIDATE_INT)
+            : false;
 
-    if (is_wp_error($order_id)) {
-        return new WP_REST_Response([
-            'message' => $order_id->get_error_message()
-        ], 400);
-    }
+        if (!$product_id || $quantity === false || $quantity <= 0) {
+            return new WP_REST_Response([
+                'message' => 'Invalid product ID or quantity.'
+            ], 400);
+        }
 
-    // Save order information
-    update_post_meta($order_id, 'user_id', $uid);
-    update_post_meta($order_id, 'order_date', current_time('mysql'));
-    update_post_meta($order_id, 'total_amount', round($total_amount, 2));
-    update_post_meta($order_id, 'order_status', 'pending');
-    update_post_meta($order_id, 'order_items', [
-        [
+        // Check if product exists
+        $product = get_post($product_id);
+
+        if (
+            !$product ||
+            $product->post_type !== 'product' ||
+            $product->post_status !== 'publish'
+        ) {
+            return new WP_REST_Response([
+                'message' => "Invalid product: {$product_id}"
+            ], 400);
+        }
+
+        // Get product price from database
+        $price = get_post_meta($product_id, 'price', true);
+
+        if ($price === '' || !is_numeric($price) || $price < 0) {
+            return new WP_REST_Response([
+                'message' => "Invalid price for product: {$product_id}"
+            ], 400);
+        }
+
+        $price = (float) $price;
+
+        // Store order item
+        $order_items[] = [
             'product_id' => $product_id,
             'amount' => $quantity,
-        ]
-    ]);
+        ];
 
-    return new WP_REST_Response([
-        'order' => [
-            'order_id' => $order_id,
-            'uid' => $uid,
-            'product_id' => $product_id,
-            'quantity' => $quantity,
-        ]
-    ], 201);
+        // Calculate total
+        $total_amount += $price * $quantity;
+    }
+
+    $total_amount = round($total_amount, 2);
+
+    // Start database transaction
+    $wpdb->query('START TRANSACTION');
+
+    try {
+
+        // Create order
+        $order_id = wp_insert_post([
+            'post_type' => 'shop_order',
+            'post_title' => 'Order - User ' . $uid,
+            'post_status' => 'publish',
+        ], true);
+
+        if (is_wp_error($order_id)) {
+            throw new Exception($order_id->get_error_message());
+        }
+
+        // Save order information
+        update_post_meta($order_id, 'user_id', $uid);
+        update_post_meta($order_id, 'order_date', current_time('mysql'));
+        update_post_meta($order_id, 'total_amount', $total_amount);
+        update_post_meta($order_id, 'order_status', 'pending');
+
+        // Save all order items
+        update_post_meta($order_id, 'order_items', $order_items);
+
+        // Commit transaction
+        $wpdb->query('COMMIT');
+
+        return new WP_REST_Response([
+            'message' => 'Order created successfully',
+            'order' => [
+                'order_id' => $order_id,
+                'uid' => $uid,
+                'order_date' => get_post_meta($order_id, 'order_date', true),
+                'total_amount' => $total_amount,
+                'status' => 'pending',
+            ],
+            'order_items' => $order_items,
+        ], 201);
+
+    } catch (Exception $e) {
+
+        // Rollback if something goes wrong
+        $wpdb->query('ROLLBACK');
+
+        return new WP_REST_Response([
+            'message' => 'Order creation failed.',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
 }
+
 
 // ==========================================
 // 4. ADD ITEM TO ORDER
